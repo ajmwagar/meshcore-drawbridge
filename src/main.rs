@@ -3,10 +3,10 @@ use base64::{Engine, engine::general_purpose::STANDARD};
 use clap::{Parser, Subcommand};
 use drawbridge_appservice::{AppServiceState, router};
 use drawbridge_core::secret;
+use drawbridge_meshcore::MeshCoreClient;
 use drawbridge_store::Store;
 use meshcore_drawbridge::{
     config::Config,
-    meshcore::MeshCoreClient,
     runtime::{self, Bridge},
 };
 use rand::RngCore;

@@ -3,13 +3,13 @@
 use crate::{
     commands::{self, Command},
     config::Config,
-    meshcore::{Conversation, MeshCoreClient},
 };
 use anyhow::{Context, Result, bail};
 use async_trait::async_trait;
 use drawbridge_appservice::TransactionHandler;
 use drawbridge_core::{RoomSpec, now, secret, stable_id};
 use drawbridge_matrix::{MatrixAppService, RegistrationBundle, parse_transaction};
+use drawbridge_meshcore::{Conversation, MeshCoreClient};
 use drawbridge_store::{Binding, Store};
 use reqwest::{
     Client,
