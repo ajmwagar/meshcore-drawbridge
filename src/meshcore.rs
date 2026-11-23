@@ -29,8 +29,18 @@ pub struct Health {
     pub name: String,
     pub contacts: u64,
     pub channels: u64,
+    pub radio: RadioHealth,
     #[serde(default)]
     pub last_error: Option<String>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct RadioHealth {
+    pub freq_mhz: f64,
+    pub bw_khz: f64,
+    pub sf: u8,
+    pub cr: u8,
+    pub tx_power: i32,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -189,6 +199,33 @@ impl MeshCoreClient {
     pub async fn health(&self) -> Result<Health> {
         let value = self.get("/v1/health", &[]).await?;
         serde_json::from_value(value).context("invalid sidecar health response")
+    }
+
+    pub async fn self_info(&self) -> Result<Value> {
+        let value = self.get("/v1/self", &[]).await?;
+        Ok(value.get("self").cloned().unwrap_or(Value::Null))
+    }
+
+    pub async fn advert(&self, flood: bool) -> Result<Value> {
+        self.post("/v1/advert", json!({"flood": flood})).await
+    }
+
+    pub async fn set_name(&self, name: &str) -> Result<Value> {
+        self.post("/v1/settings", json!({"name": name})).await
+    }
+
+    pub async fn set_tx_power(&self, value: i32) -> Result<Value> {
+        self.post("/v1/settings", json!({"tx_power": value})).await
+    }
+
+    pub async fn set_path_hash_mode(&self, mode: u8) -> Result<Value> {
+        self.post("/v1/settings", json!({"path_hash_mode": mode}))
+            .await
+    }
+
+    pub async fn set_manual_add_contacts(&self, manual: bool) -> Result<Value> {
+        self.post("/v1/settings", json!({"manual_add_contacts": manual}))
+            .await
     }
 
     pub async fn messages(&self, since: i64, limit: u32) -> Result<Vec<Message>> {

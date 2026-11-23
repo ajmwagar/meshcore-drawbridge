@@ -22,7 +22,8 @@ async fn health() -> Json<Value> {
         "public_key": "aa",
         "name": "Radioman-Pi",
         "contacts": 3,
-        "channels": 8
+        "channels": 8,
+        "radio": {"freq_mhz": 910.525, "bw_khz": 62.5, "sf": 7, "cr": 5, "tx_power": 22}
     }))
 }
 

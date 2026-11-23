@@ -1,6 +1,7 @@
 //! The bridge runtime: MeshCore sidecar polling and Matrix transaction ingest.
 
 use crate::{
+    commands::{self, Command},
     config::Config,
     meshcore::{Conversation, MeshCoreClient},
 };
@@ -240,6 +241,16 @@ impl Bridge {
                 warn!(conversation=%binding.key, "bound conversation is no longer allowed");
                 continue;
             }
+            if self.handle_command(&binding, &event.event_id, text).await? {
+                self.store.link(
+                    &self.config.tenant,
+                    &event.event_id,
+                    &format!("command:{}", binding.key),
+                    "outbound",
+                    &binding.key,
+                )?;
+                continue;
+            }
             let ack = match self.mesh.send(&conversation, text).await {
                 Ok(ack) => ack,
                 Err(error) => {
@@ -258,6 +269,118 @@ impl Bridge {
             )?;
         }
         Ok(())
+    }
+
+    async fn handle_command(&self, binding: &Binding, event_id: &str, text: &str) -> Result<bool> {
+        let Some(parsed) = commands::parse(text) else {
+            return Ok(false);
+        };
+        let response = match parsed {
+            Ok(command) => match self.run_command(command).await {
+                Ok(message) => message,
+                Err(error) => format!("Command failed: {error}"),
+            },
+            Err(usage) => usage,
+        };
+        let transaction = stable_id(&[&self.config.tenant, "command", event_id]);
+        self.matrix
+            .send_text(&binding.room, &binding.ghost, &transaction, &response)
+            .await?;
+        Ok(true)
+    }
+
+    async fn run_command(&self, command: Command) -> Result<String> {
+        match command {
+            Command::Help => Ok(commands::HELP.to_string()),
+            Command::Status => {
+                let health = self.mesh.health().await?;
+                let key = &health.public_key[..health.public_key.len().min(12)];
+                Ok(format!(
+                    "{} · {} · {:.3} MHz BW {:.1} SF{} CR{} · {} dBm · contacts {} · channels {}",
+                    health.name,
+                    key,
+                    health.radio.freq_mhz,
+                    health.radio.bw_khz,
+                    health.radio.sf,
+                    health.radio.cr,
+                    health.radio.tx_power,
+                    health.contacts,
+                    health.channels
+                ))
+            }
+            Command::Advert { flood } => {
+                self.mesh.advert(flood).await?;
+                Ok(if flood {
+                    "Flood advert sent.".into()
+                } else {
+                    "Zero-hop advert sent.".into()
+                })
+            }
+            Command::Name(name) => {
+                self.mesh.set_name(&name).await?;
+                Ok(format!("Radio name set to {name}."))
+            }
+            Command::TxPower(value) => {
+                self.mesh.set_tx_power(value).await?;
+                Ok(format!("TX power set to {value} dBm."))
+            }
+            Command::PathMode(mode) => {
+                self.mesh.set_path_hash_mode(mode).await?;
+                Ok(format!(
+                    "Message path hash mode set to {mode} ({} bytes).",
+                    mode + 1
+                ))
+            }
+            Command::AutoAdd(enabled) => {
+                self.mesh.set_manual_add_contacts(!enabled).await?;
+                Ok(format!(
+                    "Contact auto-add {}.",
+                    if enabled {
+                        "enabled"
+                    } else {
+                        "disabled (manual add only)"
+                    }
+                ))
+            }
+            Command::Channels => {
+                let channels = self.mesh.channels().await?;
+                let mut names: Vec<(u32, String)> = channels
+                    .iter()
+                    .filter_map(|(index, value)| {
+                        let index = index.parse().ok()?;
+                        let name = value.get("name").and_then(Value::as_str).unwrap_or("");
+                        Some((
+                            index,
+                            if name.is_empty() {
+                                format!("#{index}")
+                            } else {
+                                format!("{name} (#{index})")
+                            },
+                        ))
+                    })
+                    .collect();
+                names.sort();
+                Ok(format!(
+                    "Channels: {}",
+                    names
+                        .iter()
+                        .map(|(_, name)| name.as_str())
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                ))
+            }
+            Command::Contacts => {
+                let contacts = self.mesh.contacts().await?;
+                let chats = contacts
+                    .values()
+                    .filter(|value| value.get("type").and_then(Value::as_u64) == Some(1))
+                    .count();
+                Ok(format!(
+                    "{} contacts on the radio; {chats} chat contacts. Use /mesh name or the Beeper room to DM a configured contact.",
+                    contacts.len()
+                ))
+            }
+        }
     }
 
     pub fn config(&self) -> &Config {

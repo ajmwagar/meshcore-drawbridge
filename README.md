@@ -104,6 +104,27 @@ owner. Whisper the bridge bot or open the room in Beeper and send a message; it
 goes out on the MeshCore channel. MeshCore channel/contact messages appear in
 the matching room.
 
+## Bridge commands
+
+Owner-only messages starting with `/mesh` or `!mesh` are handled by the bridge
+and are never forwarded to MeshCore:
+
+```text
+/mesh status
+/mesh advert [flood|zerohop]
+/mesh name <name>
+/mesh txpower <0-30>
+/mesh pathmode <0|1|2>
+/mesh autoadd on|off
+/mesh channels
+/mesh contacts
+```
+
+`advert` sends a flood advert by default; `zerohop` sends a local-only advert.
+`autoadd off` sets the radio's `manual_add_contacts` flag, so it stops adding
+every advert it hears. These commands require the sidecar's `/v1/advert` and
+`/v1/settings` endpoints.
+
 ## Commands
 
 ```sh
