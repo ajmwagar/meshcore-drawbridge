@@ -7,3 +7,8 @@ config.toml
 *.db-wal
 *.lockfile
 .env
+
+# Runtime logs and pid files
+*.log
+logs.txt
+*.pid

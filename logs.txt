@@ -1,2 +1,0 @@
-[2m2026-11-23T06:22:04.684207Z[0m [32m INFO[0m [2mmeshcore_mautrix::runtime[0m[2m:[0m created MeshCore room [3mconversation[0m[2m=[0mchannel:1 [3mroom[0m[2m=[0m!xpl8cvNM1swp6aLnQBYF:beeper.local
-[2m2026-11-23T06:22:04.684391Z[0m [32m INFO[0m [2mmeshcore_mautrix[0m[2m:[0m meshcore-mautrix listening [3mlisten[0m[2m=[0m127.0.0.1:8081 [3mpoll_seconds[0m[2m=[0m2
