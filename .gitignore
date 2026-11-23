@@ -1,0 +1,9 @@
+/target
+secrets/
+data/
+config.toml
+*.db
+*.db-shm
+*.db-wal
+*.lockfile
+.env

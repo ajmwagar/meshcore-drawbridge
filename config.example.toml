@@ -1,0 +1,24 @@
+# Paths resolve relative to this file. Secrets belong in files referenced by
+# *_FILE env vars, never in this repository.
+database = "data/meshcore-mautrix.db"
+encryption_key_env = "MESHCORE_MAUTRIX_KEY"
+listen = "127.0.0.1:8080"
+poll_seconds = 2
+
+# Exact values from `bbctl register --json sh-meshcore`.
+owner = "@YOUR_USER:beeper.com"
+homeserver = "https://matrix.beeper.com/_hungryserv/YOUR_USER"
+registration = "secrets/registration.json"
+tenant = "personal"
+
+# Bridge these channel indexes. Empty means every inbound channel.
+channels = [0]
+# Bridge these contact pubkey prefixes. Empty means every inbound DM.
+contacts = []
+# Create a Matrix room on first contact; disable to require an existing binding.
+auto_create_rooms = true
+
+[meshcore]
+url = "http://127.0.0.1:8787"
+token_env = "MESHCORE_TOKEN"
+default_channel = 0

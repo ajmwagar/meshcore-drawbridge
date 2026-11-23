@@ -1,0 +1,9 @@
+MeshCore → Matrix bridge
+Copyright 2026 Avery Wagar and contributors
+Licensed under the Apache License, Version 2.0; see LICENSE.
+
+Built on Drawbridge (Apache-2.0):
+https://github.com/ajmwagar/drawbridge
+
+MeshCore is a separate project by its own contributors. This bridge speaks the
+Radioman MeshCore sidecar HTTP API; no MeshCore firmware is vendored here.
