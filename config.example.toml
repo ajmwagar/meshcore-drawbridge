@@ -10,6 +10,9 @@ owner = "@YOUR_USER:beeper.com"
 homeserver = "https://matrix.beeper.com/_hungryserv/YOUR_USER"
 registration = "secrets/registration.json"
 tenant = "personal"
+# Opt-in: accept Matrix room invites for the owner. This is a user-level
+# credential; leave it unset to keep rooms invite-only.
+# owner_token_env = "MESHCORE_MAUTRIX_OWNER"
 
 # Bridge these channel indexes. Empty means every inbound channel.
 channels = [0]

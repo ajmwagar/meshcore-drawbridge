@@ -11,6 +11,10 @@ use drawbridge_appservice::TransactionHandler;
 use drawbridge_core::{RoomSpec, now, secret, stable_id};
 use drawbridge_matrix::{MatrixAppService, RegistrationBundle, parse_transaction};
 use drawbridge_store::{Binding, Store};
+use reqwest::{
+    Client,
+    header::{AUTHORIZATION, HeaderValue},
+};
 use serde_json::Value;
 use std::{
     collections::HashSet,
@@ -22,12 +26,60 @@ use std::{
 };
 use tracing::{info, warn};
 
+/// Minimal owner-scoped join client. Drawbridge owns the canonical
+/// `MatrixUser` implementation; this shim keeps the bridge buildable against the
+/// currently pinned Drawbridge revision until that commit is published.
+#[derive(Clone)]
+struct OwnerJoin {
+    client: Client,
+    base: url::Url,
+    token: HeaderValue,
+}
+
+impl OwnerJoin {
+    fn new(homeserver: &url::Url, token: &str) -> Result<Self> {
+        let mut token = HeaderValue::from_str(&format!("Bearer {token}"))?;
+        token.set_sensitive(true);
+        Ok(Self {
+            client: Client::builder()
+                .redirect(reqwest::redirect::Policy::none())
+                .timeout(Duration::from_secs(30))
+                .build()?,
+            base: homeserver.clone(),
+            token,
+        })
+    }
+
+    async fn join(&self, room: &str) -> Result<()> {
+        let mut url = self.base.clone();
+        url.path_segments_mut()
+            .map_err(|_| anyhow::anyhow!("invalid Matrix base URL"))?
+            .pop_if_empty()
+            .extend(["_matrix", "client", "v3", "join", room]);
+        let response = self
+            .client
+            .post(url)
+            .header(AUTHORIZATION, self.token.clone())
+            .json(&serde_json::json!({}))
+            .send()
+            .await
+            .map_err(|e| anyhow::anyhow!("Matrix join failed: {}", e.without_url()))?;
+        let status = response.status();
+        let body: Value = response.json().await.unwrap_or(Value::Null);
+        if !status.is_success() && status != reqwest::StatusCode::CONFLICT {
+            bail!("Matrix join returned HTTP {status}: {body}");
+        }
+        Ok(())
+    }
+}
+
 pub struct Bridge {
     config: Config,
     matrix: MatrixAppService,
     mesh: MeshCoreClient,
     store: Arc<Store>,
     allowed_channels: RwLock<HashSet<u32>>,
+    owner: Option<OwnerJoin>,
     ready: AtomicBool,
     last_success: AtomicU64,
 }
@@ -39,6 +91,10 @@ impl Bridge {
         let hs_token = bundle.registration.hs_token.clone();
         let mesh_token = secret(&config.meshcore.token_env)?;
         let mesh = MeshCoreClient::new(config.meshcore.url.clone(), mesh_token)?;
+        let owner = match config.owner_token_env.as_deref() {
+            Some(env) => Some(OwnerJoin::new(&config.homeserver, &secret(env)?)?),
+            None => None,
+        };
         let database_key = secret(&config.encryption_key_env)?;
         let store = Arc::new(Store::open(&config.database, &database_key, "")?);
         let mut allowed_channels: HashSet<u32> = config.channels.iter().copied().collect();
@@ -56,6 +112,7 @@ impl Bridge {
             mesh,
             store,
             allowed_channels: RwLock::new(allowed_channels),
+            owner,
             ready: AtomicBool::new(false),
             last_success: AtomicU64::new(0),
         });
@@ -72,6 +129,15 @@ impl Bridge {
                 Ok(_) => {}
                 Err(error) => {
                     warn!(%error, "could not determine the latest MeshCore message; starting at 0");
+                }
+            }
+        }
+        // Opt-in owner auto-join for rooms that already exist (for example after
+        // a restart, or when the bridge was previously invite-only).
+        if let Some(owner) = &bridge.owner {
+            for binding in bridge.store.bindings(&bridge.config.tenant)? {
+                if let Err(error) = owner.join(&binding.room).await {
+                    warn!(%error, room=%binding.room, "owner auto-join failed");
                 }
             }
         }
@@ -150,6 +216,11 @@ impl Bridge {
             .matrix
             .ensure_room(&spec, &ghost, &self.config.owner)
             .await?;
+        if let Some(owner) = &self.owner {
+            if let Err(error) = owner.join(&room).await {
+                warn!(%error, %room, "owner auto-join failed");
+            }
+        }
         let binding = Binding {
             tenant: self.config.tenant.clone(),
             key,

@@ -132,7 +132,9 @@ meshcore://channel/add?name=<name>&secret=<hex>
 ```
 
 `/mesh channel key` and `/mesh channel share` return the key/URI for an
-existing channel. **The key is a shared secret** and the bridge room is not
+existing channel. New rooms are created with an owner invite. Set
+`owner_token_env` (a user access token in an owner-only file) to have the
+bridge accept the invite automatically; leave it unset for invite-only. **The key is a shared secret** and the bridge room is not
 end-to-end encrypted; share it only where that is acceptable.
 
 `advert` sends a flood advert by default; `zerohop` sends a local-only advert.
