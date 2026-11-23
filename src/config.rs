@@ -34,6 +34,10 @@ pub struct Config {
     /// default: a fresh bridge starts at the latest message.
     #[serde(default)]
     pub backfill: bool,
+    /// Optional Matrix user token used only to accept room invites for the
+    /// owner. This is a user-level credential; keep it opt-in.
+    #[serde(default)]
+    pub owner_token_env: Option<String>,
     pub meshcore: MeshCoreConfig,
 }
 
@@ -96,6 +100,9 @@ impl Config {
             !config.meshcore.token_env.is_empty(),
             "meshcore.token_env must name the sidecar token"
         );
+        if let Some(env) = &config.owner_token_env {
+            ensure!(!env.is_empty(), "owner_token_env must not be empty");
+        }
         let mut seen = HashSet::new();
         for channel in &config.channels {
             ensure!(seen.insert(*channel), "duplicate channel {channel}");
@@ -157,6 +164,7 @@ mod tests {
             contacts: vec!["dc6c06a8050b".into()],
             auto_create_rooms: true,
             backfill: false,
+            owner_token_env: None,
             meshcore: MeshCoreConfig {
                 url: "http://127.0.0.1:8787".parse().unwrap(),
                 token_env: "MESHCORE_TOKEN".into(),

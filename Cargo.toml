@@ -1,11 +1,11 @@
 [package]
-name = "meshcore-mautrix"
+name = "meshcore-drawbridge"
 version = "0.1.0"
 edition = "2024"
 rust-version = "1.88"
 license = "Apache-2.0"
 description = "MeshCore to Matrix application-service bridge built on Drawbridge"
-repository = "https://github.com/ajmwagar/meshcore-mautrix"
+repository = "https://github.com/ajmwagar/meshcore-drawbridge"
 
 [dependencies]
 anyhow = "1"
@@ -16,6 +16,7 @@ clap = { version = "4", features = ["derive"] }
 drawbridge-appservice = { git = "https://github.com/ajmwagar/drawbridge", rev = "f88562d6d226ec8644cd3905c65d28bcb2b75b13" }
 drawbridge-core = { git = "https://github.com/ajmwagar/drawbridge", rev = "f88562d6d226ec8644cd3905c65d28bcb2b75b13" }
 drawbridge-matrix = { git = "https://github.com/ajmwagar/drawbridge", rev = "f88562d6d226ec8644cd3905c65d28bcb2b75b13" }
+drawbridge-meshcore = { git = "https://github.com/ajmwagar/drawbridge", rev = "d866cddd87b3e35ee050b6387b4c41f86a690cfd" }
 drawbridge-store = { git = "https://github.com/ajmwagar/drawbridge", rev = "f88562d6d226ec8644cd3905c65d28bcb2b75b13" }
 rand = "0.8"
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }

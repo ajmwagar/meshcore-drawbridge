@@ -10,7 +10,7 @@ this process only polls its durable message log and sends through its bounded,
 allowlisted `/v1/send` endpoint.
 
 ```
-MeshCore radio ──BLE──> radioman meshcore sidecar ──HTTP──> meshcore-mautrix ──appservice──> Matrix/Beeper
+MeshCore radio ──BLE──> radioman meshcore sidecar ──HTTP──> meshcore-drawbridge ──appservice──> Matrix/Beeper
                                                           │
                                                           └── SQLite: cursor, bindings, links, dedupe
 ```
@@ -86,7 +86,7 @@ chmod 600 secrets/meshcore-token
 ### 3. Check and run
 
 ```sh
-export MESHCORE_MAUTRIX_KEY_FILE=$PWD/secrets/database-key
+export MESHCORE_DRAWBRIDGE_KEY_FILE=$PWD/secrets/database-key
 export MESHCORE_TOKEN_FILE=$PWD/secrets/meshcore-token
 
 cargo run --release -- check
@@ -104,15 +104,53 @@ owner. Whisper the bridge bot or open the room in Beeper and send a message; it
 goes out on the MeshCore channel. MeshCore channel/contact messages appear in
 the matching room.
 
+## Bridge commands
+
+Owner-only messages starting with `/mesh` or `!mesh` are handled by the bridge
+and are never forwarded to MeshCore:
+
+```text
+/mesh status
+/mesh advert [flood|zerohop]
+/mesh name <name>
+/mesh txpower <0-30>
+/mesh pathmode <0|1|2>
+/mesh autoadd on|off
+/mesh channels
+/mesh contacts
+/mesh channel create <name>
+/mesh channel key <index>
+/mesh channel share <index>
+```
+
+`/mesh channel create` picks the first empty slot (1–7), generates a 16-byte
+key, configures the radio, and creates the Matrix room. The response contains
+the official share URI:
+
+```
+meshcore://channel/add?name=<name>&secret=<hex>
+```
+
+`/mesh channel key` and `/mesh channel share` return the key/URI for an
+existing channel. New rooms are created with an owner invite. Set
+`owner_token_env` (a user access token in an owner-only file) to have the
+bridge accept the invite automatically; leave it unset for invite-only. **The key is a shared secret** and the bridge room is not
+end-to-end encrypted; share it only where that is acceptable.
+
+`advert` sends a flood advert by default; `zerohop` sends a local-only advert.
+`autoadd off` sets the radio's `manual_add_contacts` flag, so it stops adding
+every advert it hears. These commands require the sidecar's `/v1/advert` and
+`/v1/settings` endpoints.
+
 ## Commands
 
 ```sh
-meshcore-mautrix check          # validate config, registration, sidecar, keys
-meshcore-mautrix run            # appservice HTTP + poller
-meshcore-mautrix rooms          # list bound MeshCore conversations
-meshcore-mautrix send --channel 0 --text "hello"
-meshcore-mautrix send --contact dc6c06a8050b --text "hello"
-meshcore-mautrix generate-key
+meshcore-drawbridge check          # validate config, registration, sidecar, keys
+meshcore-drawbridge run            # appservice HTTP + poller
+meshcore-drawbridge rooms          # list bound MeshCore conversations
+meshcore-drawbridge send --channel 0 --text "hello"
+meshcore-drawbridge send --contact dc6c06a8050b --text "hello"
+meshcore-drawbridge generate-key
 ```
 
 ## Configuration

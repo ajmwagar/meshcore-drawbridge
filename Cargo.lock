@@ -390,6 +390,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "drawbridge-meshcore"
+version = "0.1.0"
+source = "git+https://github.com/ajmwagar/drawbridge?rev=d866cddd87b3e35ee050b6387b4c41f86a690cfd#d866cddd87b3e35ee050b6387b4c41f86a690cfd"
+dependencies = [
+ "anyhow",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "url",
+]
+
+[[package]]
 name = "drawbridge-store"
 version = "0.1.0"
 source = "git+https://github.com/ajmwagar/drawbridge?rev=f88562d6d226ec8644cd3905c65d28bcb2b75b13#f88562d6d226ec8644cd3905c65d28bcb2b75b13"
@@ -912,7 +924,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cf8baf1c55e62ffcace7a9f06f4bd9cd3f0c4beb022d3b367256b91b87513d98"
 
 [[package]]
-name = "meshcore-mautrix"
+name = "meshcore-drawbridge"
 version = "0.1.0"
 dependencies = [
  "anyhow",
@@ -923,6 +935,7 @@ dependencies = [
  "drawbridge-appservice",
  "drawbridge-core",
  "drawbridge-matrix",
+ "drawbridge-meshcore",
  "drawbridge-store",
  "rand 0.8.8",
  "reqwest",

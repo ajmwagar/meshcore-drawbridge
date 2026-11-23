@@ -1,4 +1,4 @@
-use meshcore_mautrix::config::Config;
+use meshcore_drawbridge::config::Config;
 
 #[test]
 fn relative_paths_resolve_against_the_config_file() {
