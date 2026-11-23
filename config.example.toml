@@ -1,7 +1,7 @@
 # Paths resolve relative to this file. Secrets belong in files referenced by
 # *_FILE env vars, never in this repository.
-database = "data/meshcore-mautrix.db"
-encryption_key_env = "MESHCORE_MAUTRIX_KEY"
+database = "data/meshcore-drawbridge.db"
+encryption_key_env = "MESHCORE_DRAWBRIDGE_KEY"
 listen = "127.0.0.1:8080"
 poll_seconds = 2
 
@@ -12,7 +12,7 @@ registration = "secrets/registration.json"
 tenant = "personal"
 # Opt-in: accept Matrix room invites for the owner. This is a user-level
 # credential; leave it unset to keep rooms invite-only.
-# owner_token_env = "MESHCORE_MAUTRIX_OWNER"
+# owner_token_env = "MESHCORE_DRAWBRIDGE_OWNER"
 
 # Bridge these channel indexes. Empty means every inbound channel.
 channels = [0]

@@ -4,7 +4,7 @@ use axum::{
     http::{HeaderMap, StatusCode},
     routing::{get, post},
 };
-use meshcore_mautrix::meshcore::MeshCoreClient;
+use meshcore_drawbridge::meshcore::MeshCoreClient;
 use serde_json::{Value, json};
 use std::sync::{Arc, Mutex};
 

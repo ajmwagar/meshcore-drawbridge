@@ -10,7 +10,7 @@ this process only polls its durable message log and sends through its bounded,
 allowlisted `/v1/send` endpoint.
 
 ```
-MeshCore radio ──BLE──> radioman meshcore sidecar ──HTTP──> meshcore-mautrix ──appservice──> Matrix/Beeper
+MeshCore radio ──BLE──> radioman meshcore sidecar ──HTTP──> meshcore-drawbridge ──appservice──> Matrix/Beeper
                                                           │
                                                           └── SQLite: cursor, bindings, links, dedupe
 ```
@@ -86,7 +86,7 @@ chmod 600 secrets/meshcore-token
 ### 3. Check and run
 
 ```sh
-export MESHCORE_MAUTRIX_KEY_FILE=$PWD/secrets/database-key
+export MESHCORE_DRAWBRIDGE_KEY_FILE=$PWD/secrets/database-key
 export MESHCORE_TOKEN_FILE=$PWD/secrets/meshcore-token
 
 cargo run --release -- check
@@ -145,12 +145,12 @@ every advert it hears. These commands require the sidecar's `/v1/advert` and
 ## Commands
 
 ```sh
-meshcore-mautrix check          # validate config, registration, sidecar, keys
-meshcore-mautrix run            # appservice HTTP + poller
-meshcore-mautrix rooms          # list bound MeshCore conversations
-meshcore-mautrix send --channel 0 --text "hello"
-meshcore-mautrix send --contact dc6c06a8050b --text "hello"
-meshcore-mautrix generate-key
+meshcore-drawbridge check          # validate config, registration, sidecar, keys
+meshcore-drawbridge run            # appservice HTTP + poller
+meshcore-drawbridge rooms          # list bound MeshCore conversations
+meshcore-drawbridge send --channel 0 --text "hello"
+meshcore-drawbridge send --contact dc6c06a8050b --text "hello"
+meshcore-drawbridge generate-key
 ```
 
 ## Configuration

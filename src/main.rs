@@ -4,7 +4,7 @@ use clap::{Parser, Subcommand};
 use drawbridge_appservice::{AppServiceState, router};
 use drawbridge_core::secret;
 use drawbridge_store::Store;
-use meshcore_mautrix::{
+use meshcore_drawbridge::{
     config::Config,
     meshcore::MeshCoreClient,
     runtime::{self, Bridge},
@@ -81,7 +81,7 @@ async fn run(config: Config) -> Result<()> {
     let listener = tokio::net::TcpListener::bind(listen)
         .await
         .with_context(|| format!("bind {listen}"))?;
-    info!(%listen, poll_seconds, "meshcore-mautrix listening");
+    info!(%listen, poll_seconds, "meshcore-drawbridge listening");
     let poller = tokio::spawn(bridge.clone().poll_loop());
     let result = axum::serve(listener, app)
         .with_graceful_shutdown(shutdown())

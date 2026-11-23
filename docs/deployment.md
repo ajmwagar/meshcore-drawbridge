@@ -7,10 +7,10 @@ appservice websocket to the local HTTP server.
 ## Files
 
 ```
-~/.config/meshcore-mautrix/config.toml
-~/.config/meshcore-mautrix/secrets/registration.json   # includes local url
-~/.config/meshcore-mautrix/secrets/database-key
-~/.config/meshcore-mautrix/secrets/meshcore-token
+~/.config/meshcore-drawbridge/config.toml
+~/.config/meshcore-drawbridge/secrets/registration.json   # includes local url
+~/.config/meshcore-drawbridge/secrets/database-key
+~/.config/meshcore-drawbridge/secrets/meshcore-token
 ```
 
 All files mode `0600`. The database is created `0600` and locked against a
@@ -18,7 +18,7 @@ second process.
 
 ## systemd user units
 
-`meshcore-mautrix.service`:
+`meshcore-drawbridge.service`:
 
 ```ini
 [Unit]
@@ -27,10 +27,10 @@ After=network-online.target
 
 [Service]
 Type=simple
-WorkingDirectory=%h/.config/meshcore-mautrix
-Environment=MESHCORE_MAUTRIX_KEY_FILE=%h/.config/meshcore-mautrix/secrets/database-key
-Environment=MESHCORE_TOKEN_FILE=%h/.config/meshcore-mautrix/secrets/meshcore-token
-ExecStart=%h/.local/bin/meshcore-mautrix --config %h/.config/meshcore-mautrix/config.toml run
+WorkingDirectory=%h/.config/meshcore-drawbridge
+Environment=MESHCORE_DRAWBRIDGE_KEY_FILE=%h/.config/meshcore-drawbridge/secrets/database-key
+Environment=MESHCORE_TOKEN_FILE=%h/.config/meshcore-drawbridge/secrets/meshcore-token
+ExecStart=%h/.local/bin/meshcore-drawbridge --config %h/.config/meshcore-drawbridge/config.toml run
 Restart=always
 RestartSec=5
 
@@ -43,11 +43,11 @@ WantedBy=default.target
 ```ini
 [Unit]
 Description=Beeper appservice websocket proxy
-After=network-online.target meshcore-mautrix.service
+After=network-online.target meshcore-drawbridge.service
 
 [Service]
 Type=simple
-ExecStart=/path/to/bbctl proxy -r %h/.config/meshcore-mautrix/secrets/registration.json
+ExecStart=/path/to/bbctl proxy -r %h/.config/meshcore-drawbridge/secrets/registration.json
 Restart=always
 RestartSec=5
 
@@ -79,6 +79,6 @@ bearer-token API on a public interface.
 
 ## Upgrade
 
-Replace the binary and restart `meshcore-mautrix`; the cursor and bindings are
+Replace the binary and restart `meshcore-drawbridge`; the cursor and bindings are
 durable. Keep the same database key and registration. Never re-register just to
 fix a websocket issue: deletion removes the bridge's rooms.

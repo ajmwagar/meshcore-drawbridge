@@ -1,11 +1,11 @@
 [package]
-name = "meshcore-mautrix"
+name = "meshcore-drawbridge"
 version = "0.1.0"
 edition = "2024"
 rust-version = "1.88"
 license = "Apache-2.0"
 description = "MeshCore to Matrix application-service bridge built on Drawbridge"
-repository = "https://github.com/ajmwagar/meshcore-mautrix"
+repository = "https://github.com/ajmwagar/meshcore-drawbridge"
 
 [dependencies]
 anyhow = "1"

@@ -205,7 +205,7 @@ impl Bridge {
         self.matrix.register_user(&ghost, &display).await?;
         let spec = RoomSpec {
             name: format!("{display} · MeshCore"),
-            topic: "MeshCore conversation bridged by meshcore-mautrix. This bridge room is not end-to-end encrypted.".into(),
+            topic: "MeshCore conversation bridged by meshcore-drawbridge. This bridge room is not end-to-end encrypted.".into(),
             bridge_key: format!("meshcore://{}/{}", self.config.tenant, key),
             protocol_id: "meshcore".into(),
             protocol_display_name: "MeshCore".into(),
@@ -540,7 +540,7 @@ impl TransactionHandler for Bridge {
     }
 
     fn metric_prefix(&self) -> &'static str {
-        "meshcore_mautrix"
+        "meshcore_drawbridge"
     }
 }
 
