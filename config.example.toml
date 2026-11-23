@@ -17,6 +17,8 @@ channels = [0]
 contacts = []
 # Create a Matrix room on first contact; disable to require an existing binding.
 auto_create_rooms = true
+# Replay old sidecar messages on first run. Off = start at the latest message.
+backfill = false
 
 [meshcore]
 url = "http://127.0.0.1:8787"

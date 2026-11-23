@@ -49,15 +49,33 @@ impl Bridge {
             ready: AtomicBool::new(false),
             last_success: AtomicU64::new(0),
         });
-        // Make the configured channel visible in Beeper before the first message.
-        if bridge.config.auto_create_rooms
-            && let Err(error) = bridge
-                .ensure_binding(&Conversation::Channel(
-                    bridge.config.meshcore.default_channel,
-                ))
-                .await
-        {
-            warn!(%error, "could not pre-create the default channel room");
+        // A fresh bridge starts at the latest sidecar message unless the
+        // operator explicitly asks for history.
+        if bridge.store.cursor(&bridge.config.tenant, "meshcore")? == 0 && !bridge.config.backfill {
+            match bridge.mesh.latest_id().await {
+                Ok(latest) if latest > 0 => {
+                    bridge
+                        .store
+                        .set_cursor(&bridge.config.tenant, "meshcore", latest)?;
+                    info!(latest, "starting at the latest MeshCore message");
+                }
+                Ok(_) => {}
+                Err(error) => {
+                    warn!(%error, "could not determine the latest MeshCore message; starting at 0");
+                }
+            }
+        }
+        // Make every configured channel visible in Beeper before its first message.
+        if bridge.config.auto_create_rooms {
+            let mut channels = bridge.config.channels.clone();
+            if !channels.contains(&bridge.config.meshcore.default_channel) {
+                channels.push(bridge.config.meshcore.default_channel);
+            }
+            for channel in channels {
+                if let Err(error) = bridge.ensure_binding(&Conversation::Channel(channel)).await {
+                    warn!(%error, channel, "could not pre-create channel room");
+                }
+            }
         }
         Ok((bridge, hs_token))
     }

@@ -30,6 +30,10 @@ pub struct Config {
     pub contacts: Vec<String>,
     #[serde(default = "auto_create_default")]
     pub auto_create_rooms: bool,
+    /// Replay the sidecar's historical message log on first run. Off by
+    /// default: a fresh bridge starts at the latest message.
+    #[serde(default)]
+    pub backfill: bool,
     pub meshcore: MeshCoreConfig,
 }
 
@@ -152,6 +156,7 @@ mod tests {
             channels: vec![0],
             contacts: vec!["dc6c06a8050b".into()],
             auto_create_rooms: true,
+            backfill: false,
             meshcore: MeshCoreConfig {
                 url: "http://127.0.0.1:8787".parse().unwrap(),
                 token_env: "MESHCORE_TOKEN".into(),

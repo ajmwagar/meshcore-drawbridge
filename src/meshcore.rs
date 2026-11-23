@@ -208,6 +208,26 @@ impl MeshCoreClient {
         serde_json::from_value(messages).context("invalid sidecar messages response")
     }
 
+    /// Highest message id currently in the sidecar log. Used to start a new
+    /// bridge at "now" instead of replaying the entire history.
+    pub async fn latest_id(&self) -> Result<i64> {
+        let mut since = 0i64;
+        let mut latest = 0i64;
+        loop {
+            let page = self.messages(since, 500).await?;
+            if page.is_empty() {
+                break;
+            }
+            let max = page.iter().map(|message| message.id).max().unwrap_or(since);
+            latest = latest.max(max);
+            if page.len() < 500 {
+                break;
+            }
+            since = latest;
+        }
+        Ok(latest)
+    }
+
     pub async fn contacts(&self) -> Result<HashMap<String, Value>> {
         let value = self.get("/v1/contacts", &[]).await?;
         serde_json::from_value(

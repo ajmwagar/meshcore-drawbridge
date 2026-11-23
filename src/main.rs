@@ -52,6 +52,12 @@ async fn main() -> Result<()> {
         )
         .init();
     let cli = Cli::parse();
+    if matches!(cli.command, Command::GenerateKey) {
+        let mut bytes = [0u8; 32];
+        rand::thread_rng().fill_bytes(&mut bytes);
+        println!("{}", STANDARD.encode(bytes));
+        return Ok(());
+    }
     let config = Config::load(&cli.config)?;
     match cli.command {
         Command::Run => run(config).await,
@@ -62,12 +68,7 @@ async fn main() -> Result<()> {
             contact,
             text,
         } => send(&config, channel, contact, text).await,
-        Command::GenerateKey => {
-            let mut bytes = [0u8; 32];
-            rand::thread_rng().fill_bytes(&mut bytes);
-            println!("{}", STANDARD.encode(bytes));
-            Ok(())
-        }
+        Command::GenerateKey => unreachable!("handled before config load"),
     }
 }
 
