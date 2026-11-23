@@ -120,6 +120,14 @@ impl Conversation {
 }
 
 #[derive(Debug, Clone, Deserialize)]
+pub struct ChannelKey {
+    pub channel_idx: u8,
+    pub name: String,
+    pub secret: String,
+    pub uri: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
 pub struct SendAck {
     pub request_id: String,
     pub state: String,
@@ -199,6 +207,18 @@ impl MeshCoreClient {
     pub async fn health(&self) -> Result<Health> {
         let value = self.get("/v1/health", &[]).await?;
         serde_json::from_value(value).context("invalid sidecar health response")
+    }
+
+    pub async fn create_channel(&self, name: &str) -> Result<ChannelKey> {
+        let value = self.post("/v1/channels", json!({"name": name})).await?;
+        serde_json::from_value(value).context("invalid sidecar channel response")
+    }
+
+    pub async fn channel_key(&self, index: u8) -> Result<ChannelKey> {
+        let value = self
+            .get(&format!("/v1/channels/{index}/secret"), &[])
+            .await?;
+        serde_json::from_value(value).context("invalid sidecar channel secret response")
     }
 
     pub async fn self_info(&self) -> Result<Value> {

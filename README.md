@@ -118,7 +118,22 @@ and are never forwarded to MeshCore:
 /mesh autoadd on|off
 /mesh channels
 /mesh contacts
+/mesh channel create <name>
+/mesh channel key <index>
+/mesh channel share <index>
 ```
+
+`/mesh channel create` picks the first empty slot (1–7), generates a 16-byte
+key, configures the radio, and creates the Matrix room. The response contains
+the official share URI:
+
+```
+meshcore://channel/add?name=<name>&secret=<hex>
+```
+
+`/mesh channel key` and `/mesh channel share` return the key/URI for an
+existing channel. **The key is a shared secret** and the bridge room is not
+end-to-end encrypted; share it only where that is acceptable.
 
 `advert` sends a flood advert by default; `zerohop` sends a local-only advert.
 `autoadd off` sets the radio's `manual_add_contacts` flag, so it stops adding

@@ -15,6 +15,9 @@ pub enum Command {
     AutoAdd(bool),
     Channels,
     Contacts,
+    ChannelCreate(String),
+    ChannelKey(u8),
+    ChannelShare(u8),
 }
 
 /// Parse `/mesh ...` or `!mesh ...`. Returns `None` for ordinary messages and
@@ -84,6 +87,31 @@ fn parse_command(word: &str, args: &[&str]) -> Result<Command, String> {
         },
         "channels" => Ok(Command::Channels),
         "contacts" => Ok(Command::Contacts),
+        "channel" => match args {
+            ["create", rest @ ..] => {
+                let name = rest.join(" ");
+                if name.is_empty() {
+                    Err("usage: /mesh channel create <name>".into())
+                } else if name.len() > 32
+                    || name.chars().any(|c| !c.is_ascii() || c.is_ascii_control())
+                {
+                    Err("name must be 1-32 printable ASCII characters".into())
+                } else if name.starts_with('#') {
+                    Err("private channel names must not start with #".into())
+                } else {
+                    Ok(Command::ChannelCreate(name))
+                }
+            }
+            ["key", index] => index
+                .parse::<u8>()
+                .map(Command::ChannelKey)
+                .map_err(|_| "usage: /mesh channel key <index>".to_string()),
+            ["share", index] => index
+                .parse::<u8>()
+                .map(Command::ChannelShare)
+                .map_err(|_| "usage: /mesh channel share <index>".to_string()),
+            _ => Err("usage: /mesh channel create <name> | key <index> | share <index>".into()),
+        },
         other => Err(format!("unknown command {other}; try /mesh help")),
     }
 }
@@ -97,7 +125,10 @@ MeshCore commands (owner only):
 /mesh pathmode <0|1|2>
 /mesh autoadd on|off
 /mesh channels
-/mesh contacts";
+/mesh contacts
+/mesh channel create <name>
+/mesh channel key <index>
+/mesh channel share <index>";
 
 #[cfg(test)]
 mod tests {
@@ -129,5 +160,17 @@ mod tests {
         assert!(matches!(parse("/mesh txpower 99"), Some(Err(_))));
         assert!(matches!(parse("/mesh name "), Some(Err(_))));
         assert!(matches!(parse("/mesh nope"), Some(Err(_))));
+        assert_eq!(
+            parse("/mesh channel create Family"),
+            Some(Ok(Command::ChannelCreate("Family".into())))
+        );
+        assert_eq!(
+            parse("/mesh channel key 2"),
+            Some(Ok(Command::ChannelKey(2)))
+        );
+        assert_eq!(
+            parse("/mesh channel share 2"),
+            Some(Ok(Command::ChannelShare(2)))
+        );
     }
 }

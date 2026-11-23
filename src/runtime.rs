@@ -13,8 +13,9 @@ use drawbridge_matrix::{MatrixAppService, RegistrationBundle, parse_transaction}
 use drawbridge_store::{Binding, Store};
 use serde_json::Value;
 use std::{
+    collections::HashSet,
     sync::{
-        Arc,
+        Arc, RwLock,
         atomic::{AtomicBool, AtomicU64, Ordering},
     },
     time::Duration,
@@ -26,6 +27,7 @@ pub struct Bridge {
     matrix: MatrixAppService,
     mesh: MeshCoreClient,
     store: Arc<Store>,
+    allowed_channels: RwLock<HashSet<u32>>,
     ready: AtomicBool,
     last_success: AtomicU64,
 }
@@ -39,6 +41,12 @@ impl Bridge {
         let mesh = MeshCoreClient::new(config.meshcore.url.clone(), mesh_token)?;
         let database_key = secret(&config.encryption_key_env)?;
         let store = Arc::new(Store::open(&config.database, &database_key, "")?);
+        let mut allowed_channels: HashSet<u32> = config.channels.iter().copied().collect();
+        for binding in store.bindings(&config.tenant)? {
+            if let Ok(Conversation::Channel(channel)) = Conversation::parse(&binding.key) {
+                allowed_channels.insert(channel);
+            }
+        }
         if let Err(error) = matrix.register_bot("MeshCore").await {
             warn!(%error, "could not register the bridge bot; continuing");
         }
@@ -47,6 +55,7 @@ impl Bridge {
             matrix,
             mesh,
             store,
+            allowed_channels: RwLock::new(allowed_channels),
             ready: AtomicBool::new(false),
             last_success: AtomicU64::new(0),
         });
@@ -83,9 +92,23 @@ impl Bridge {
 
     fn conversation_allowed(&self, conversation: &Conversation) -> bool {
         match conversation {
-            Conversation::Channel(channel) => self.config.allows_channel(*channel as i64),
+            Conversation::Channel(channel) => {
+                self.config.channels.is_empty()
+                    || self
+                        .allowed_channels
+                        .read()
+                        .expect("allowed_channels poisoned")
+                        .contains(channel)
+            }
             Conversation::Contact(prefix) => self.config.allows_contact(prefix),
         }
+    }
+
+    fn allow_channel(&self, channel: u32) {
+        self.allowed_channels
+            .write()
+            .expect("allowed_channels poisoned")
+            .insert(channel);
     }
 
     async fn ensure_binding(&self, conversation: &Conversation) -> Result<Option<Binding>> {
@@ -367,6 +390,34 @@ impl Bridge {
                         .map(|(_, name)| name.as_str())
                         .collect::<Vec<_>>()
                         .join(", ")
+                ))
+            }
+            Command::ChannelCreate(name) => {
+                let created = self.mesh.create_channel(&name).await?;
+                self.allow_channel(created.channel_idx as u32);
+                let binding = self
+                    .ensure_binding(&Conversation::Channel(created.channel_idx as u32))
+                    .await?;
+                let room = binding
+                    .map(|binding| binding.room)
+                    .unwrap_or_else(|| "(room creation disabled)".into());
+                Ok(format!(
+                    "Created private channel #{} '{}'.\nKey: {}\nShare: {}\nRoom: {}\nAnyone with this key can read the channel.",
+                    created.channel_idx, created.name, created.secret, created.uri, room
+                ))
+            }
+            Command::ChannelKey(index) => {
+                let channel = self.mesh.channel_key(index).await?;
+                Ok(format!(
+                    "Channel #{} '{}'.\nKey: {}\nShare: {}\nTreat this key as a secret.",
+                    channel.channel_idx, channel.name, channel.secret, channel.uri
+                ))
+            }
+            Command::ChannelShare(index) => {
+                let channel = self.mesh.channel_key(index).await?;
+                Ok(format!(
+                    "Channel #{} '{}': {}",
+                    channel.channel_idx, channel.name, channel.uri
                 ))
             }
             Command::Contacts => {
